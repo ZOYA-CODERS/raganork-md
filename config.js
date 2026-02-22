@@ -19,7 +19,7 @@ function applySQLiteResilience(sequelizeInstance) {
   }
 
   sequelizeInstance.__sqliteGuardsApplied = true;
-  const busyTimeoutMs = parseInt(process.env.SQLITE_BUSY_TIMEOUT || "15000", 10); // modifiable
+  const busyTimeoutMs = parseInt(process.env.SQLITE_BUSY_TIMEOUT || "15000", 10);
   const pragmas = [
     "PRAGMA journal_mode=WAL;",
     "PRAGMA synchronous=NORMAL;",
@@ -69,7 +69,7 @@ function applySQLiteResilience(sequelizeInstance) {
   };
 
   const isWriteQuery = (sql) => {
-    if (!sql || typeof sql !== "string") return true; // default to safe mode
+    if (!sql || typeof sql !== "string") return true; 
     const normalizedSql = sql.trim().toUpperCase();
     return (
       normalizedSql.startsWith("INSERT") ||
@@ -83,7 +83,6 @@ function applySQLiteResilience(sequelizeInstance) {
   };
 
   sequelizeInstance.query = function serializedQuery(sql, ...rest) {
-    // only queue writes; reads can run concurrently
     if (!isWriteQuery(sql)) {
       return originalQuery(sql, ...rest);
     }
@@ -121,7 +120,15 @@ const MAX_RECONNECT_ATTEMPTS = parseInt(
   process.env.MAX_RECONNECT_ATTEMPTS || "5",
   10
 );
-const VERSION = require("./package.json").version;
+
+// package.json එක නැතිවුණොත් error එකක් එන එක වැළැක්වීමට safe require එකක් දාමු
+let VERSION = "1.0.0";
+try {
+  VERSION = require("./package.json").version;
+} catch (e) {
+  VERSION = "1.0.0";
+}
+
 const DATABASE_URL =
   process.env.DATABASE_URL === undefined
     ? "./bot.db"
@@ -163,15 +170,15 @@ const sequelize = (() => {
   });
 })();
 
-const SESSION_STRING = process.env.SESSION || process.env.SESSION_ID;
+// මෙතනට ඔයාගේ Session ID එක add කළා
+const SESSION_STRING = process.env.SESSION || process.env.SESSION_ID || "RGNK~TiowsPXA";
 
 const SESSION = SESSION_STRING
-  ? SESSION_STRING.split(",").map((s) => s.split("~")[1].trim())
+  ? SESSION_STRING.split(",").map((s) => s.includes("~") ? s.split("~")[1].trim() : s.trim())
   : [];
 
 const settingsMenu = [
   { title: "PM antispam block", env_var: "PM_ANTISPAM" },
-  //{ title: "Command auto reaction", env_var: "CMD_REACTION" },
   { title: "Auto read all messages", env_var: "READ_MESSAGES" },
   { title: "Auto read command messages", env_var: "READ_COMMAND" },
   { title: "Auto read status updates", env_var: "AUTO_READ_STATUS" },
@@ -307,7 +314,6 @@ const config = new Proxy(baseConfig, {
 
   set(target, prop, value) {
     const key = typeof prop === "symbol" ? prop.toString() : prop;
-
     dynamicValues.set(key, value);
     return true;
   },
@@ -368,20 +374,15 @@ Object.defineProperty(config, "loadFromDB", {
   enumerable: false,
 });
 
+// Helper Functions
 Object.defineProperty(config, "getDynamicKeys", {
-  value: function () {
-    return Array.from(dynamicValues.keys());
-  },
-  writable: false,
-  enumerable: false,
+  value: function () { return Array.from(dynamicValues.keys()); },
+  writable: false, enumerable: false,
 });
 
 Object.defineProperty(config, "isDynamic", {
-  value: function (key) {
-    return dynamicValues.has(key);
-  },
-  writable: false,
-  enumerable: false,
+  value: function (key) { return dynamicValues.has(key); },
+  writable: false, enumerable: false,
 });
 
 Object.defineProperty(config, "getSource", {
@@ -392,8 +393,7 @@ Object.defineProperty(config, "getSource", {
       return "environment";
     return "not_found";
   },
-  writable: false,
-  enumerable: false,
+  writable: false, enumerable: false,
 });
 
 Object.defineProperty(config, "debug", {
@@ -406,9 +406,7 @@ Object.defineProperty(config, "debug", {
     console.log("Config Debug Info:", result);
     return result;
   },
-  writable: false,
-  enumerable: false,
+  writable: false, enumerable: false,
 });
 
 module.exports = config;
-
